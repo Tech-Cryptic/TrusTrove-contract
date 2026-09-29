@@ -3025,7 +3025,10 @@ fn test_initialize_rejects_treasury_aliases() {
             &String::from_str(&te.env, TEST_SHARE_SYMBOL),
             &DEFAULT_SHARE_DECIMALS,
         );
-        assert!(result.is_err(), "treasury alias for role {role} was accepted");
+        assert!(
+            result.is_err(),
+            "treasury alias for role {role} was accepted"
+        );
     }
 }
 
