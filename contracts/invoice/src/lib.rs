@@ -77,13 +77,7 @@ impl InvoiceContract {
             panic_with_error!(&env, InvoiceError::AlreadyInitialized);
         }
         admin.require_auth();
-        Self::assert_valid_wiring_address(
-            &env,
-            &registry_contract,
-            &admin,
-            None,
-            Vec::new(&env),
-        );
+        Self::assert_valid_wiring_address(&env, &registry_contract, &admin, None, Vec::new(&env));
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage()
             .instance()
