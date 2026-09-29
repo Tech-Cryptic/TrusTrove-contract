@@ -14,7 +14,10 @@ use trusttrove_invoice::InvoiceContractClient;
 use trusttrove_pool::PoolContractClient;
 use trusttrove_registry::{RegistryContract, RegistryContractClient};
 
-use crate::{DataKey, PoolFactoryContract, PoolFactoryContractClient};
+use crate::{
+    DataKey, PoolFactoryContract, PoolFactoryContractClient, DEFAULT_MIN_INITIAL_DEPOSIT,
+    DEFAULT_SHARE_DECIMALS, DEFAULT_SHARE_NAME, DEFAULT_SHARE_SYMBOL,
+};
 
 /// Everything a test needs to drive the factory, already wired together: an
 /// initialized factory plus the invoice/escrow/registry contracts and the pool
@@ -107,9 +110,7 @@ fn register_asset(te: &TestEnv, asset: &Address) -> Address {
 
 /// Creates an initialized pool outside the factory to model a migrated pool.
 fn new_initialized_pool(te: &TestEnv, asset: &Address) -> Address {
-    let pool_address = te
-        .env
-        .register_contract(None, trusttrove_pool::PoolContract);
+    let pool_address = te.env.register_contract(None, trusttrove_pool::PoolContract);
     let escrow_id = if *asset == te.asset {
         te.escrow_id.clone()
     } else {
@@ -122,10 +123,10 @@ fn new_initialized_pool(te: &TestEnv, asset: &Address) -> Address {
         asset,
         &te.registry_id,
         &te.admin,
-        &trusttrove_pool::DEFAULT_MIN_INITIAL_DEPOSIT,
-        &String::from_str(&te.env, trusttrove_pool::DEFAULT_SHARE_NAME),
-        &String::from_str(&te.env, trusttrove_pool::DEFAULT_SHARE_SYMBOL),
-        &trusttrove_pool::DEFAULT_SHARE_DECIMALS,
+        &DEFAULT_MIN_INITIAL_DEPOSIT,
+        &String::from_str(&te.env, DEFAULT_SHARE_NAME),
+        &String::from_str(&te.env, DEFAULT_SHARE_SYMBOL),
+        &DEFAULT_SHARE_DECIMALS,
     );
     pool_address
 }
@@ -423,17 +424,24 @@ fn test_register_existing_pool() {
 
     // Verify registration
     te.env.as_contract(&te.factory_id, || {
-        let stored_pool: Address = te.env
+        let stored_pool: Address = te
+            .env
             .storage()
             .instance()
             .get(&DataKey::PoolForAsset(te.asset.clone()))
             .unwrap();
         assert_eq!(stored_pool, pool_address);
 
-        let count: u32 = te.env.storage().instance().get(&DataKey::AssetCount).unwrap();
+        let count: u32 = te
+            .env
+            .storage()
+            .instance()
+            .get(&DataKey::AssetCount)
+            .unwrap();
         assert_eq!(count, 1);
 
-        let indexed_asset: Address = te.env
+        let indexed_asset: Address = te
+            .env
             .storage()
             .instance()
             .get(&DataKey::AssetIndex(0))
@@ -984,18 +992,15 @@ fn test_get_aggregate_stats_skips_pool_when_stats_call_fails() {
     // Simulate a legacy/corrupt mapping: valid registration now rejects this
     // address, but aggregate reads must remain resilient to old entries.
     te.env.as_contract(&te.factory_id, || {
-        te.env
-            .storage()
-            .instance()
-            .set(&DataKey::AssetCount, &2u32);
+        te.env.storage().instance().set(&DataKey::AssetCount, &2u32);
         te.env
             .storage()
             .instance()
             .set(&DataKey::AssetIndex(1), &invalid_asset);
-        te.env.storage().instance().set(
-            &DataKey::PoolForAsset(invalid_asset),
-            &invalid_pool,
-        );
+        te.env
+            .storage()
+            .instance()
+            .set(&DataKey::PoolForAsset(invalid_asset), &invalid_pool);
     });
 
     let aggregate = te.factory.get_aggregate_stats();
