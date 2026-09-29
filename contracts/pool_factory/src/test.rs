@@ -110,7 +110,9 @@ fn register_asset(te: &TestEnv, asset: &Address) -> Address {
 
 /// Creates an initialized pool outside the factory to model a migrated pool.
 fn new_initialized_pool(te: &TestEnv, asset: &Address) -> Address {
-    let pool_address = te.env.register_contract(None, trusttrove_pool::PoolContract);
+    let pool_address = te
+        .env
+        .register_contract(None, trusttrove_pool::PoolContract);
     let escrow_id = if *asset == te.asset {
         te.escrow_id.clone()
     } else {
